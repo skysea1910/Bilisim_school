@@ -1,0 +1,142 @@
+import pygame
+import sys
+import random
+import time
+
+pygame.init()
+
+GENISLIK, YUKSEKLIK = 600, 600
+BEYAZ = (255, 255, 255)
+kus_x = 50
+kus_y = YUKSEKLIK // 2
+kus_hareket = 0
+kus_boyut = 50
+boru_genislik = 50
+boru_yukseklik = 300
+boru_x = GENISLIK
+boru_hiz = 5
+yer_cekimi = 1
+saat = pygame.time.Clock()
+FPS = 30
+skor = 0
+skor_limiti = 5
+can = 5
+
+bosluk_boyutu = 300
+min_boru_yukseklik = 50
+max_boru_yukseklik = YUKSEKLIK - bosluk_boyutu - min_boru_yukseklik
+boru_aralik = 300
+
+round_2 = False
+round_2_skor_limiti = 30
+round_2_bosluk_boyutu = 100
+
+round_3 = False
+round_3_skor_limiti = 100
+round_3_bosluk_boyutu = 50
+
+screen = pygame.display.set_mode((GENISLIK, YUKSEKLIK))
+pygame.display.set_caption("Flappy Bird Klonu")
+
+kus_resim = pygame.image.load('dove.png')
+kus_resim = pygame.transform.scale(kus_resim, (kus_boyut, kus_boyut))
+
+boru_resim = pygame.image.load('pipe (2).png ')
+boru_resim = pygame.transform.scale(boru_resim, (boru_genislik, boru_yukseklik))
+
+font = pygame.font.Font(None, 36)
+
+def kusu_ciz(x, y):
+    screen.blit(kus_resim, (x, y))
+
+def boruyu_ciz(x, y):
+    screen.blit(boru_resim, (x, y + bosluk_boyutu))
+    screen.blit(pygame.transform.flip(boru_resim, False, True), (x, y - boru_yukseklik))
+
+def skoru_goster(skor, can):
+    skor_metni = font.render(f"Skor: {skor} Can: {can}", True, (0, 0, 0))
+    screen.blit(skor_metni, (10, 10))
+
+def boru_yukseklik_uret():
+    if round_2:
+        return random.randint(round_2_bosluk_boyutu, YUKSEKLIK - round_2_bosluk_boyutu - min_boru_yukseklik)
+    elif round_3:
+        return random.randint(round_3_bosluk_boyutu, YUKSEKLIK - round_3_bosluk_boyutu - min_boru_yukseklik)
+    else:
+        return random.randint(min_boru_yukseklik, max_boru_yukseklik)
+
+def round_2_basladi():
+    global round_2
+    round_2 = True
+    print("Round 2 Başladı!")
+
+def round_3_basladi():
+    global round_3
+    round_3 = True
+    print("Round 3 Başladı!")
+
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                kus_hareket = -10
+
+    kus_hareket += yer_cekimi
+    kus_y += kus_hareket
+
+    kus_y = max(min(kus_y, YUKSEKLIK - kus_boyut), 0)
+
+    boru_x -= boru_hiz
+
+    if boru_x < -boru_genislik:
+        boru_x = GENISLIK + boru_aralik
+        boru_yukseklik = boru_yukseklik_uret()
+        skor += 1
+
+        if skor >= skor_limiti and not round_2:
+            round_2_basladi()
+
+        if skor >= round_3_skor_limiti and not round_3:
+            round_3_basladi()
+
+    if skor >= skor_limiti and round_2:
+        if skor >= round_2_skor_limiti and not round_3:
+            round_3_basladi()
+
+    if skor >= skor_limiti and round_3:
+        if skor >= round_3_skor_limiti:
+            print("Oyun Bitti - Round 3 Tamamlandı!")
+            pygame.quit()
+            sys.exit()
+
+    kus_dikdortgen = pygame.Rect(kus_x, kus_y, kus_boyut, kus_boyut)
+    ust_boru_dikdortgen = pygame.Rect(boru_x, boru_yukseklik + bosluk_boyutu, boru_genislik, YUKSEKLIK)
+    alt_boru_dikdortgen = pygame.Rect(boru_x, 0, boru_genislik, boru_yukseklik)
+
+    if kus_dikdortgen.colliderect(ust_boru_dikdortgen) or kus_dikdortgen.colliderect(
+            alt_boru_dikdortgen):
+        print("Çarpışma!")
+        can -= 1
+        if can == 0:
+            print("Oyun Bitti - Canınız Bitti!")
+            pygame.quit()
+            sys.exit()
+
+        boru_x = -100
+        time.sleep(1)
+
+    if skor > 0 and skor % 10 == 0:
+        skor += 1
+        time.sleep(1)
+        can += 1
+
+    screen.fill(BEYAZ)
+    boruyu_ciz(boru_x, boru_yukseklik)
+    kusu_ciz(kus_x, kus_y)
+    skoru_goster(skor, can)
+
+    pygame.display.update()
+    saat.tick(FPS)
