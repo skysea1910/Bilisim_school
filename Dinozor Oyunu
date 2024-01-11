@@ -1,0 +1,103 @@
+import pygame
+import sys
+import random
+
+GENISLIK = 800
+YUKSEKLIK = 300
+
+BEYAZ = (255, 255, 255)
+SARI = (255, 255, 0)
+
+pygame.init()
+
+ekran = pygame.display.set_mode((GENISLIK, YUKSEKLIK))
+pygame.display.set_caption("Dinozor Oyunu")
+
+dinozor_resim = pygame.image.load("dinosaur.png")
+dinozor_resim = pygame.transform.scale(dinozor_resim, (50, 50))
+dinozor_hiz = 5
+dinozor_ziplama_kuvveti = 15
+
+dinozor_x = 50
+dinozor_y = YUKSEKLIK - dinozor_resim.get_height()
+
+ziplama = False
+ziplama_yukseklik = 0
+
+engel_resim = pygame.image.load("cactus.png")
+engel_resim = pygame.transform.scale(engel_resim, (30, 50))
+engel_hiz = 5
+engel_aralik = 500
+engel_listesi = []
+
+skor = 0
+hiz_artis_sayaci = 0
+
+saat = pygame.time.Clock()
+
+def oyunu_ciz():
+    ekran.fill(BEYAZ)
+
+    ekran.blit(dinozor_resim, (dinozor_x, dinozor_y))
+
+    for engel in engel_listesi:
+        ekran.blit(engel_resim, engel.topleft)
+
+    font = pygame.font.Font(None, 36)
+    skor_metni = font.render("Skor: " + str(skor), True, SARI)
+    ekran.blit(skor_metni, (GENISLIK - 150, 10))
+
+    pygame.display.flip()
+
+def oyunu_guncelle():
+    global dinozor_x, dinozor_y, ziplama, ziplama_yukseklik, engel_listesi, skor, hiz_artis_sayaci, engel_hiz
+
+    if ziplama:
+        dinozor_y -= ziplama_yukseklik
+        ziplama_yukseklik -= 1
+
+        if dinozor_y >= YUKSEKLIK - dinozor_resim.get_height():
+            ziplama = False
+            dinozor_y = YUKSEKLIK - dinozor_resim.get_height()
+
+    else:
+        if dinozor_y < YUKSEKLIK - dinozor_resim.get_height():
+            dinozor_y += 5
+        else:
+            dinozor_y = YUKSEKLIK - dinozor_resim.get_height()
+
+    dinozor_x += dinozor_hiz
+
+    dinozor_x = dinozor_x % GENISLIK
+
+    if len(engel_listesi) == 0 or engel_listesi[-1].x < GENISLIK - engel_aralik:
+        yeni_engel = pygame.Rect(GENISLIK, YUKSEKLIK - engel_resim.get_height(), engel_resim.get_width(), engel_resim.get_height())
+        engel_listesi.append(yeni_engel)
+
+    engel_listesi = [engel.move(-engel_hiz, 0) for engel in engel_listesi if engel.x > -engel_resim.get_width()]
+
+    for engel in engel_listesi:
+        if pygame.Rect(dinozor_x, dinozor_y, dinozor_resim.get_width(), dinozor_resim.get_height()).colliderect(engel):
+            oyunu_sonlandir()
+
+    # Skoru güncelle
+    skor += 1
+
+def oyunu_sonlandir():
+    global dinozor_x, dinozor_y, ziplama, ziplama_yukseklik, engel_listesi, skor, hiz_artis_sayaci, engel_hiz
+
+    print("Oyun bitti! Skor:", skor)
+    pygame.quit()
+    sys.exit()
+
+while True:
+    for etkinlik in pygame.event.get():
+        if etkinlik.type == pygame.QUIT:
+            oyunu_sonlandir()
+        elif etkinlik.type == pygame.KEYDOWN and etkinlik.key == pygame.K_SPACE and not ziplama:
+            ziplama = True
+            ziplama_yukseklik = dinozor_ziplama_kuvveti
+
+    oyunu_guncelle()
+    oyunu_ciz()
+    saat.tick(30)
