@@ -1,0 +1,121 @@
+import pygame
+import random
+
+GENISLIK = 800
+YUKSEKLIK = 400
+TOP_YARICAP = 20
+TAHTA_GENISLIK = 10
+TAHTA_YUKSEKLIK = 60
+TAHTA_RENK = (255, 255, 255)
+TOP_RENK = (255, 255, 255)
+ARKA_PLAN_RENK = (0, 0, 0)
+
+pygame.init()
+pygame.mixer.init()
+
+ekran = pygame.display.set_mode((GENISLIK, YUKSEKLIK))
+pygame.display.set_caption("Ping Pong")
+
+saat = pygame.time.Clock()
+
+top_pozisyon = [GENISLIK // 2, YUKSEKLIK // 2]
+top_hiz = [random.randint(2, 4), random.randint(-4, 4)]
+tahta1_hiz = 0
+tahta2_hiz = 0
+tahta1_pozisyon = YUKSEKLIK // 2 - TAHTA_YUKSEKLIK // 2
+tahta2_pozisyon = YUKSEKLIK // 2 - TAHTA_YUKSEKLIK // 2
+skor1 = 0
+skor2 = 0
+calisiyor = True
+
+score_sound = pygame.mixer.Sound("kazanma (1).wav")
+
+def top_animasyon():
+    global top_pozisyon, top_hiz, skor1, skor2
+
+    top_pozisyon[0] += top_hiz[0]
+    top_pozisyon[1] += top_hiz[1]
+
+    if top_pozisyon[1] < TOP_YARICAP or top_pozisyon[1] > YUKSEKLIK - TOP_YARICAP:
+        top_hiz[1] = -top_hiz[1]
+
+    if top_pozisyon[0] < TAHTA_GENISLIK + TOP_YARICAP:
+        if top_pozisyon[1] > tahta1_pozisyon and top_pozisyon[1] < tahta1_pozisyon + TAHTA_YUKSEKLIK:
+            top_hiz[0] = -top_hiz[0]
+        else:
+            skor2 += 1
+            top_resetle()
+            score_sound.play()
+    elif top_pozisyon[0] > GENISLIK - TAHTA_GENISLIK - TOP_YARICAP:
+        if top_pozisyon[1] > tahta2_pozisyon and top_pozisyon[1] < tahta2_pozisyon + TAHTA_YUKSEKLIK:
+            top_hiz[0] = -top_hiz[0]
+        else:
+            skor1 += 1
+            top_resetle()
+            score_sound.play()
+
+
+def top_resetle():
+    global top_pozisyon, top_hiz
+
+    top_pozisyon = [GENISLIK // 2, YUKSEKLIK // 2]
+    top_hiz = [random.randint(2, 4), random.randint(-4, 4)]
+
+
+def tahta_animasyon():
+    global tahta1_hiz, tahta2_hiz, tahta1_pozisyon, tahta2_pozisyon
+
+    tahta1_pozisyon += tahta1_hiz
+    tahta2_pozisyon += tahta2_hiz
+
+    if tahta1_pozisyon < 0:
+        tahta1_pozisyon = 0
+    elif tahta1_pozisyon > YUKSEKLIK - TAHTA_YUKSEKLIK:
+        tahta1_pozisyon = YUKSEKLIK - TAHTA_YUKSEKLIK
+
+    if tahta2_pozisyon < 0:
+        tahta2_pozisyon = 0
+    elif tahta2_pozisyon > YUKSEKLIK - TAHTA_YUKSEKLIK:
+        tahta2_pozisyon = YUKSEKLIK - TAHTA_YUKSEKLIK
+
+
+def nesneleri_ciz():
+    ekran.fill(ARKA_PLAN_RENK)
+    pygame.draw.rect(ekran, TAHTA_RENK, (TAHTA_GENISLIK, tahta1_pozisyon, TAHTA_GENISLIK, TAHTA_YUKSEKLIK))
+    pygame.draw.rect(ekran, TAHTA_RENK, (GENISLIK - TAHTA_GENISLIK * 2, tahta2_pozisyon, TAHTA_GENISLIK, TAHTA_YUKSEKLIK))
+    pygame.draw.circle(ekran, TOP_RENK, top_pozisyon, TOP_YARICAP, 0)
+    pygame.draw.aaline(ekran, TAHTA_RENK, (GENISLIK / 2, 0), (GENISLIK / 2, YUKSEKLIK))
+
+    font = pygame.font.Font(None, 36)
+    skor_metni = font.render(str(skor1) + " : " + str(skor2), True, TAHTA_RENK)
+    ekran.blit(skor_metni, (GENISLIK / 2 - skor_metni.get_width() / 2, 10))
+
+    pygame.display.flip()
+
+
+while calisiyor:
+    for etkinlik in pygame.event.get():
+        if etkinlik.type == pygame.QUIT:
+            calisiyor = False
+        elif etkinlik.type == pygame.KEYDOWN:
+            if etkinlik.key == pygame.K_UP:
+                tahta2_hiz = -3
+            elif etkinlik.key == pygame.K_DOWN:
+                tahta2_hiz = 3
+            elif etkinlik.key == pygame.K_w:
+                tahta1_hiz = -3
+            elif etkinlik.key == pygame.K_s:
+                tahta1_hiz = 3
+        elif etkinlik.type == pygame.KEYUP:
+            if etkinlik.key == pygame.K_UP or etkinlik.key == pygame.K_DOWN:
+                tahta2_hiz = 0
+            if etkinlik.key == pygame.K_w or etkinlik.key == pygame.K_s:
+                tahta1_hiz = 0
+
+    top_animasyon()
+    tahta_animasyon()
+    nesneleri_ciz()
+
+    saat.tick(60)
+
+pygame.quit()
